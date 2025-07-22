@@ -48,7 +48,10 @@
 <div id="output">Caricamento...</div>
 
 <script>
-  const SHEET_URL = "https://docs.google.com/spreadsheets/d/1-BE3quA05MWjAPhHWTJOca1hNv9nD5TU4aDRXWI0nxA/gviz/tq?tqx=out:json&sheet=regis-croto";
+  const SHEET_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(
+    "https://docs.google.com/spreadsheets/d/1-BE3quA05MWjAPhHWTJOca1hNv9nD5TU4aDRXWI0nxA/gviz/tq?tqx=out:json&sheet=regis-croto"
+  );
+
   let allData = [];
 
   fetch(SHEET_URL)
@@ -73,6 +76,10 @@
 
       allData = data;
       renderOutput(allData);
+    })
+    .catch(err => {
+      document.getElementById("output").innerText = "Errore nel caricamento dati 😵";
+      console.error("Errore fetch:", err);
     });
 
   function renderOutput(data) {
@@ -110,3 +117,4 @@
 
 </body>
 </html>
+
