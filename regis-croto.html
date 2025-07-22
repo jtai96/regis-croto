@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Regis-Croto</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 1000px;
+      margin: auto;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    #searchInput {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 20px;
+      box-sizing: border-box;
+    }
+    .allenatore {
+      font-weight: bold;
+      font-size: 20px;
+      margin: 30px 0 10px;
+      border-bottom: 2px solid #222;
+    }
+    .griglia-mostri {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .griglia-mostri img {
+      height: 80px;
+      border: 1px solid #ccc;
+      padding: 5px;
+      background: white;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Squadre Regis-Croto</h1>
+<input type="text" id="searchInput" placeholder="Cerca allenatore...">
+<div id="output">Caricamento...</div>
+
+<script>
+  const SHEET_URL = "https://docs.google.com/spreadsheets/d/1-BE3quA05MWjAPhHWTJOca1hNv9nD5TU4aDRXWI0nxA/gviz/tq?tqx=out:json&sheet=regis-croto";
+  let allData = [];
+
+  fetch(SHEET_URL)
+    .then(res => res.text())
+    .then(text => {
+      const json = JSON.parse(text.substring(47).slice(0, -2));
+      const rows = json.table.rows;
+
+      const allenatori = rows.map(r => r.c[0]?.v).slice(1);
+      const data = {};
+
+      for (let i = 1; i < rows.length; i++) {
+        const nome = allenatori[i - 1];
+        data[nome] = [];
+
+        for (let j = 1; j < rows[i].c.length; j++) {
+          const cell = rows[i].c[j];
+          if (cell && cell.v && (cell.v.includes('http') || cell.v.includes('.png')))
+            data[nome].push(cell.v);
+        }
+      }
+
+      allData = data;
+      renderOutput(allData);
+    });
+
+  function renderOutput(data) {
+    const container = document.getElementById("output");
+    container.innerHTML = "";
+
+    Object.entries(data).forEach(([allenatore, immagini]) => {
+      const allenatoreDiv = document.createElement("div");
+      allenatoreDiv.className = "allenatore";
+      allenatoreDiv.textContent = allenatore;
+
+      const imgContainer = document.createElement("div");
+      imgContainer.className = "griglia-mostri";
+
+      immagini.forEach(url => {
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = "Scrotomon";
+        imgContainer.appendChild(img);
+      });
+
+      container.appendChild(allenatoreDiv);
+      container.appendChild(imgContainer);
+    });
+  }
+
+  document.getElementById("searchInput").addEventListener("input", function () {
+    const value = this.value.toLowerCase();
+    const filtered = Object.fromEntries(
+      Object.entries(allData).filter(([nome]) => nome.toLowerCase().includes(value))
+    );
+    renderOutput(filtered);
+  });
+</script>
+
+</body>
+</html>
