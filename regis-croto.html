@@ -2,118 +2,70 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <title>Regis-Croto</title>
+  <title>Regis‑Croto</title>
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-      max-width: 1000px;
-      margin: auto;
-    }
-    h1 {
-      margin-bottom: 10px;
-    }
-    #searchInput {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      margin-bottom: 20px;
-      box-sizing: border-box;
-    }
-    .allenatore {
-      font-weight: bold;
-      font-size: 20px;
-      margin: 30px 0 10px;
-      border-bottom: 2px solid #222;
-    }
-    .griglia-mostri {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    .griglia-mostri img {
-      height: 80px;
-      border: 1px solid #ccc;
-      padding: 5px;
-      background: white;
-      border-radius: 6px;
-    }
+    body { font-family: sans-serif; padding:20px; max-width:1000px; margin:auto; }
+    h1 { margin-bottom:10px; }
+    #searchInput { width:100%; padding:10px; font-size:16px; margin-bottom:20px; }
+    .allenatore { font-weight:bold; font-size:20px; margin:30px 0 10px; border-bottom:2px solid #222; }
+    .griglia-mostri { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; }
+    .griglia-mostri img { height:80px; border:1px solid #ccc; padding:5px; background:white; border-radius:6px; }
   </style>
 </head>
 <body>
+  <h1>Squadre Regis‑Croto</h1>
+  <input type="text" id="searchInput" placeholder="Cerca allenatore...">
+  <div id="output">Caricamento…</div>
 
-<h1>Squadre Regis-Croto</h1>
-<input type="text" id="searchInput" placeholder="Cerca allenatore...">
-<div id="output">Caricamento...</div>
+  <script>
+    const SHEET_CALLBACK = "sheetResponse";
+    const SHEET_URL = "https://docs.google.com/spreadsheets/d/1-BE3quA05MWjAPhHWTJOca1hNv9nD5TU4aDRXWI0nxA/gviz/tq?sheet=regis-croto&callback=" + SHEET_CALLBACK;
 
-<script>
-  const SHEET_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(
-    "https://docs.google.com/spreadsheets/d/1-BE3quA05MWjAPhHWTJOca1hNv9nD5TU4aDRXWI0nxA/gviz/tq?tqx=out:json&sheet=regis-croto"
-  );
-
-  let allData = [];
-
-  fetch(SHEET_URL)
-    .then(res => res.text())
-    .then(text => {
-      const json = JSON.parse(text.substring(47).slice(0, -2));
+    window[SHEET_CALLBACK] = function(json){
       const rows = json.table.rows;
-
-      const allenatori = rows.map(r => r.c[0]?.v).slice(1);
+      const names = rows.map(r => r.c[0]?.v).slice(1);
       const data = {};
-
-      for (let i = 1; i < rows.length; i++) {
-        const nome = allenatori[i - 1];
+      for(let i=1;i<rows.length;i++){
+        const nome = names[i-1];
         data[nome] = [];
-
-        for (let j = 1; j < rows[i].c.length; j++) {
-          const cell = rows[i].c[j];
-          if (cell && cell.v && (cell.v.includes('http') || cell.v.includes('.png')))
-            data[nome].push(cell.v);
-        }
+        rows[i].c.slice(1).forEach(cell => {
+          if(cell && cell.v && (cell.v.startsWith("http") || cell.v.endsWith(".png"))) data[nome].push(cell.v);
+        });
       }
+      render(data);
+    };
 
-      allData = data;
-      renderOutput(allData);
-    })
-    .catch(err => {
-      document.getElementById("output").innerText = "Errore nel caricamento dati 😵";
-      console.error("Errore fetch:", err);
-    });
-
-  function renderOutput(data) {
-    const container = document.getElementById("output");
-    container.innerHTML = "";
-
-    Object.entries(data).forEach(([allenatore, immagini]) => {
-      const allenatoreDiv = document.createElement("div");
-      allenatoreDiv.className = "allenatore";
-      allenatoreDiv.textContent = allenatore;
-
-      const imgContainer = document.createElement("div");
-      imgContainer.className = "griglia-mostri";
-
-      immagini.forEach(url => {
-        const img = document.createElement("img");
-        img.src = url;
-        img.alt = "Scrotomon";
-        imgContainer.appendChild(img);
+    function render(data){
+      document.getElementById("output").innerHTML = "";
+      Object.entries(data).forEach(([nome, imgs])=>{
+        const d = document.createElement("div");
+        d.className = "allenatore";
+        d.textContent = nome;
+        const grid = document.createElement("div");
+        grid.className = "griglia-mostri";
+        imgs.forEach(u=> {
+          const img = document.createElement("img");
+          img.src = u;
+          img.alt = "";
+          grid.appendChild(img);
+        });
+        document.getElementById("output").appendChild(d);
+        document.getElementById("output").appendChild(grid);
       });
+      window.allData = data;
+    }
 
-      container.appendChild(allenatoreDiv);
-      container.appendChild(imgContainer);
+    document.getElementById("searchInput").addEventListener("input", e => {
+      const q = e.target.value.toLowerCase();
+      const filtered = Object.fromEntries(
+        Object.entries(window.allData).filter(([n]) => n.toLowerCase().includes(q))
+      );
+      render(filtered);
     });
-  }
 
-  document.getElementById("searchInput").addEventListener("input", function () {
-    const value = this.value.toLowerCase();
-    const filtered = Object.fromEntries(
-      Object.entries(allData).filter(([nome]) => nome.toLowerCase().includes(value))
-    );
-    renderOutput(filtered);
-  });
-</script>
-
+    const s = document.createElement("script");
+    s.src = SHEET_URL;
+    document.body.appendChild(s);
+  </script>
 </body>
 </html>
